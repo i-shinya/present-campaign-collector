@@ -9,35 +9,39 @@ const twitterClient = new Twitter({
 
 export default class TwitterConnector {
 
-    public searchTweets() {
-        console.log("search tweets.");
-        const apiPath = "search/tweets";
-        /**
-         * 検索クエリ：プレゼント フォロー リツイート
-         * リツートは除外
-         */
-        const params = {q: "プレゼント フォロー リツイート exclude:retweets", locale: "ja", count:10};
-        twitterClient.get(apiPath, params)
-            .then((tweets) => {
-                // ツイート毎にループしてリツイートとフォローを行う
-                const statuses = tweets["statuses"]; // ツイートの情報
-                console.log(statuses.length + "件取得しました。");
-                statuses.forEach(status => {
-                    const user = status["user"];
-                    console.log("https://twitter.com/" + user["screen_name"] + "/status/" + status["id_str"]); // これでツイートのページへアクセスできるよ
+    public async searchTweets(): Promise<any> {
+        return new Promise<any>(async (resolve, reject) => {
+            console.log("search tweets.");
+            const apiPath = "search/tweets";
+            /**
+             * 検索クエリ：プレゼント フォロー リツイート
+             * リツートは除外
+             */
+            const params = {q: "プレゼント フォロー リツイート exclude:retweets", locale: "ja", count:10};
+            await twitterClient.get(apiPath, params)
+                .then(async (tweets) => {
+                    // ツイート毎にループしてリツイートとフォローを行う
+                    const statuses = tweets["statuses"]; // ツイートの情報
+                    console.log(statuses.length + "件取得しました。");
+                    statuses.forEach(status => {
+                        const user = status["user"];
+                        console.log("https://twitter.com/" + user["screen_name"] + "/status/" + status["id_str"]); // これでツイートのページへアクセスできるよ
 
-                    // 取得したツイートのユーザをまだフォローしていなかったらフォローする
-                    this.follow(user["id_str"])
-                    // 取得したツイートをリツイートする
-                    this.retweet(status["id_str"])
-                });
-            })
-            .catch((error) => {
-                console.log("failed.");
-                console.log("==========================");
-                console.log(error);
-                console.log("==========================");
-            })
+                        // 取得したツイートのユーザをまだフォローしていなかったらフォローする
+                        this.follow(user["id_str"])
+                        // 取得したツイートをリツイートする
+                        this.retweet(status["id_str"])
+                    });
+                    resolve("success");
+                })
+                .catch((error) => {
+                    console.log("failed.");
+                    console.log("==========================");
+                    console.log(error);
+                    console.log("==========================");
+                    reject();
+                })
+        })
     }
 
     public retweet(tweetId: string) {
